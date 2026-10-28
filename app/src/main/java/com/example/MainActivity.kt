@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.res.Configuration
 import android.os.Bundle
 import android.os.IBinder
 import androidx.activity.ComponentActivity
@@ -44,11 +45,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +74,7 @@ import com.example.data.CheesseLocalDatabase
 import com.example.data.CheesseLocalRepository
 import com.example.data.FirestoreLeaderboardRepository
 import com.example.service.UciEngineService
+import com.example.ui.components.AdaptiveFiveIconBottomToolbar
 import com.example.ui.components.BoardTransportAndHintToolbar
 import com.example.ui.components.ChessBoard
 import com.example.ui.components.CoachModeGuidancePanel
@@ -82,9 +88,10 @@ import com.example.ui.screens.DeepGameReportScreen
 import com.example.ui.screens.LeaderboardsCardSection
 import com.example.ui.screens.PlayAndArchiveTrainerScreen
 import com.example.ui.screens.SocialChallengesAndEBoardScreen
+import com.example.ui.theme.EspressoBackgroundBottom
+import com.example.ui.theme.EspressoBackgroundTop
 import com.example.ui.theme.MoveBestColor
 import com.example.ui.theme.MyApplicationTheme
-import com.example.ui.theme.SlateBackground
 import com.example.ui.theme.SlateSurface
 import com.example.ui.theme.SlateSurfaceVariant
 import com.example.ui.theme.SpaceGroteskFontFamily
@@ -113,6 +120,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CheesseStudioScreen() {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     val viewModel: CheesseViewModel = viewModel(
         factory = viewModelFactory {
@@ -223,32 +232,59 @@ fun CheesseStudioScreen() {
         uiState.position.computeCapturedSummary()
     }
 
+    var showStudioTabBar by remember { mutableStateOf(true) }
+
+    val espressoWoodBrush = remember {
+        Brush.verticalGradient(
+            colors = listOf(EspressoBackgroundTop, EspressoBackgroundBottom)
+        )
+    }
+
     Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = SlateBackground,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(espressoWoodBrush),
+        containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets.safeDrawing,
         bottomBar = {
             if (!uiState.fullScreenMode) {
-                NavigationBar(
-                    containerColor = SlateSurface,
-                    modifier = Modifier.testTag("bottom_navigation_bar")
-                ) {
-                    StudioTab.entries.forEach { tab ->
-                        val icon = when (tab) {
-                            StudioTab.ANALYZE -> Icons.Default.Analytics
-                            StudioTab.REVIEW -> Icons.Default.Assessment
-                            StudioTab.PLAY -> Icons.Default.MenuBook
-                            StudioTab.SOCIAL -> Icons.Default.Group
-                            StudioTab.EDITOR -> Icons.Default.Edit
-                            StudioTab.SETTINGS -> Icons.Default.Settings
-                        }
-                        NavigationBarItem(
-                            selected = uiState.activeTab == tab,
-                            onClick = { viewModel.selectTab(tab) },
-                            icon = { Icon(icon, contentDescription = tab.label) },
-                            label = { Text(tab.label, maxLines = 1) },
-                            modifier = Modifier.testTag("nav_tab_${tab.name.lowercase()}")
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // In Portrait mode, anchor the 5-icon control bar (☰, ⇄, ⏪, ⏩, •••) to the bottom edge
+                    if (!isLandscape) {
+                        AdaptiveFiveIconBottomToolbar(
+                            canStepBackward = uiState.currentPlyIndex > 0,
+                            canStepForward = uiState.currentPlyIndex < uiState.moveHistory.size,
+                            onMenuClicked = { showStudioTabBar = !showStudioTabBar },
+                            onFlipBoardClicked = { viewModel.flipBoardManually() },
+                            onPreviousPlyClicked = { viewModel.stepPly(-1) },
+                            onNextPlyClicked = { viewModel.stepPly(1) },
+                            onMoreOptionsClicked = { viewModel.toggleFenImportSheet() }
                         )
+                    }
+
+                    if (showStudioTabBar) {
+                        NavigationBar(
+                            containerColor = SlateSurface.copy(alpha = 0.92f),
+                            modifier = Modifier.testTag("bottom_navigation_bar")
+                        ) {
+                            StudioTab.entries.forEach { tab ->
+                                val icon = when (tab) {
+                                    StudioTab.ANALYZE -> Icons.Default.Analytics
+                                    StudioTab.REVIEW -> Icons.Default.Assessment
+                                    StudioTab.PLAY -> Icons.Default.MenuBook
+                                    StudioTab.SOCIAL -> Icons.Default.Group
+                                    StudioTab.EDITOR -> Icons.Default.Edit
+                                    StudioTab.SETTINGS -> Icons.Default.Settings
+                                }
+                                NavigationBarItem(
+                                    selected = uiState.activeTab == tab,
+                                    onClick = { viewModel.selectTab(tab) },
+                                    icon = { Icon(icon, contentDescription = tab.label) },
+                                    label = { Text(tab.label, maxLines = 1) },
+                                    modifier = Modifier.testTag("nav_tab_${tab.name.lowercase()}")
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -257,9 +293,10 @@ fun CheesseStudioScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(espressoWoodBrush)
                 .padding(innerPadding)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Minimalist Top Studio Header (Zero Sign-In Gate)
@@ -325,8 +362,7 @@ fun CheesseStudioScreen() {
                         )
                     }
 
-                    // Unified ChessBoard Jetpack Compose Component:
-                    // Engine Status Header (above, isolated StateFlow) + Board Canvas (draw-phase drag, promotion overlay) + Move Notation Strip (below, isArrowDrawMode toggle)
+                    // Unified Adaptive Portrait/Landscape ChessBoard Component
                     ChessBoard(
                         position = uiState.position,
                         boardTheme = uiState.boardTheme,
@@ -382,6 +418,7 @@ fun CheesseStudioScreen() {
                         figurineNotation = uiState.figurineNotation,
                         variationMoveSymbols = uiState.variationMoveSymbols,
                         variations = uiState.variations,
+                        openingExplorer = uiState.openingExplorer,
                         onSquareTapped = { viewModel.onSquareTapped(it) },
                         onPieceDragStarted = { viewModel.onPieceDragStarted(it) },
                         onPieceDragged = { from, to -> viewModel.onPieceDragged(from, to) },
@@ -395,7 +432,22 @@ fun CheesseStudioScreen() {
                         onToggleClockRunning = { viewModel.toggleClockRunning() },
                         onResetClocks = { viewModel.resetMoveClocks() },
                         onVariationClicked = { branch -> viewModel.syncFromExternalFen(branch.targetFen) },
-                        onResumeEngine = { viewModel.resumeEngineFromHeader() }
+                        onResumeEngine = { viewModel.resumeEngineFromHeader() },
+                        onToggleEngineRunning = { viewModel.toggleEngineRunning() },
+                        onIncreaseMultiPv = { viewModel.adjustMultiPvCount(1) },
+                        onDecreaseMultiPv = { viewModel.adjustMultiPvCount(-1) },
+                        onPlayPvMove = { move -> viewModel.executeMoveOnBoard(move) },
+                        landscapeBottomBar = {
+                            AdaptiveFiveIconBottomToolbar(
+                                canStepBackward = uiState.currentPlyIndex > 0,
+                                canStepForward = uiState.currentPlyIndex < uiState.moveHistory.size,
+                                onMenuClicked = { showStudioTabBar = !showStudioTabBar },
+                                onFlipBoardClicked = { viewModel.flipBoardManually() },
+                                onPreviousPlyClicked = { viewModel.stepPly(-1) },
+                                onNextPlyClicked = { viewModel.stepPly(1) },
+                                onMoreOptionsClicked = { viewModel.toggleFenImportSheet() }
+                            )
+                        }
                     )
 
                     BoardTransportAndHintToolbar(

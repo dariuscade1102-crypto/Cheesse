@@ -417,5 +417,29 @@ class ExampleRobolectricTest {
         assertEquals(saavedra.fen, vm.uiState.value.position.toFen())
         assertTrue(vm.uiState.value.statusBannerMessage?.contains(saavedra.label) == true)
     }
-}
 
+    @Test
+    fun `default tournament board theme and gauge bar multi-pv controls update engine state`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db = CheesseLocalDatabase.getInstance(context)
+        val vm = CheesseViewModel(CheesseLocalRepository(db.cheesseDao()))
+
+        // Default theme is CLASSIC_WALNUT (#E8D0AA light squares, #B58863 dark squares)
+        val defaultTheme = vm.uiState.value.boardTheme
+        assertEquals(com.example.ui.theme.BoardThemeOption.CLASSIC_WALNUT, defaultTheme)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFE8D0AA), defaultTheme.lightSquare)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFB58863), defaultTheme.darkSquare)
+
+        // Adjust Multi-PV count via + / - circular buttons
+        val initialMultiPv = vm.uiState.value.engineConfig.multiPv
+        vm.adjustMultiPvCount(1)
+        assertEquals((initialMultiPv + 1).coerceAtMost(5), vm.uiState.value.engineConfig.multiPv)
+        vm.adjustMultiPvCount(-2)
+        assertEquals(((initialMultiPv + 1).coerceAtMost(5) - 2).coerceAtLeast(1), vm.uiState.value.engineConfig.multiPv)
+
+        // Toggle Engine Play/Pause via circular ▶ button
+        val wasRunning = vm.uiState.value.isEngineRunning
+        vm.toggleEngineRunning()
+        assertEquals(!wasRunning, vm.uiState.value.isEngineRunning)
+    }
+}

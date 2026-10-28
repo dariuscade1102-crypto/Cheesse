@@ -25,6 +25,16 @@ val MoveInaccuracyColor = Color(0xFFFACC15) // Amber
 val MoveMistakeColor = Color(0xFFFB923C)    // Orange
 val MoveBlunderColor = Color(0xFFEF4444)    // Red
 
+// Espresso / Mahogany Wood-Grain Studio Palette & Gauge Accents
+val EspressoBackgroundTop = Color(0xFF1A0F0A)
+val EspressoBackgroundBottom = Color(0xFF2B1810)
+val EvalGaugeBarBackground = Color(0xFF4B4E58)
+val ActionRoyalBlue = Color(0xFF3B82F6)
+val BestMoveIndigoArrow = Color(0xFF3B5BDB)
+val LastMoveSlateBlue = Color(0xFF7C8BA1)
+val MovePillBrightGreen = Color(0xFF65A30D)
+val MovePillOrange = Color(0xFFD97706)
+
 // Customizable Board Theme Palettes
 enum class BoardThemeOption(
     val label: String,
@@ -32,17 +42,17 @@ enum class BoardThemeOption(
     val darkSquare: Color,
     val coordColor: Color
 ) {
+    CLASSIC_WALNUT(
+        label = "Classic Walnut",
+        lightSquare = Color(0xFFE8D0AA),
+        darkSquare = Color(0xFFB58863),
+        coordColor = Color(0xFF5C3D24)
+    ),
     TOURNAMENT_EMERALD(
         label = "Tournament Emerald",
         lightSquare = Color(0xFFE5ECE6),
         darkSquare = Color(0xFF4A7C59),
         coordColor = Color(0xFF1E3A28)
-    ),
-    CLASSIC_WALNUT(
-        label = "Classic Walnut",
-        lightSquare = Color(0xFFF0D9B5),
-        darkSquare = Color(0xFFB58863),
-        coordColor = Color(0xFF5C3D24)
     ),
     OCEAN_SLATE(
         label = "Ocean Slate",
@@ -59,6 +69,6 @@ enum class BoardThemeOption(
 
     companion object {
         fun fromLabel(label: String): BoardThemeOption =
-            entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: TOURNAMENT_EMERALD
+            entries.firstOrNull { it.label.equals(label, ignoreCase = true) } ?: CLASSIC_WALNUT
     }
 }

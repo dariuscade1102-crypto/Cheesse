@@ -253,7 +253,7 @@ data class CheesseUiState(
     val pieceAnimationStyle: PieceAnimationStyle = PieceAnimationStyle.STANDARD,
     val soundEnabled: Boolean = true,
     val fullScreenMode: Boolean = false,
-    val boardTheme: BoardThemeOption = BoardThemeOption.TOURNAMENT_EMERALD,
+    val boardTheme: BoardThemeOption = BoardThemeOption.CLASSIC_WALNUT,
     val boardSizeScale: Float = 1.0f,
 
     // Game Review, Blunder Refutation & Multi-Game Archive
@@ -1097,6 +1097,28 @@ class CheesseViewModel(
             markSessionTaintedByEngine("Manual Engine Resume")
         }
         startLiveUciEngineAnalysis(fromUserManualTrigger = true)
+    }
+
+    fun toggleEngineRunning() {
+        val state = _uiState.value
+        val telemetryRunning = _engineTelemetryFlow.value.isAnalyzing && !_engineTelemetryFlow.value.pausedByPowerSaving
+        if (state.isEngineRunning && !state.enginePausedByPowerSave && telemetryRunning) {
+            debouncedEvalJob?.cancel()
+            fallbackEngineJob?.cancel()
+            uciService?.stopAnalysis()
+            _engineTelemetryFlow.update { it.copy(isAnalyzing = false) }
+            _uiState.update { it.copy(isEngineRunning = false, enginePausedByPowerSave = false) }
+        } else {
+            resumeEngineFromHeader()
+        }
+    }
+
+    fun adjustMultiPvCount(delta: Int) {
+        val current = _uiState.value.engineConfig.multiPv
+        val nextCount = (current + delta).coerceIn(1, 5)
+        if (nextCount != current) {
+            updateEngineConfig { it.copy(multiPv = nextCount) }
+        }
     }
 
     fun startLiveUciEngineAnalysis(fromUserManualTrigger: Boolean = false) {
