@@ -1,0 +1,259 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net: default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidAnalyzedGame(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 200 &&
+             data.whitePlayer is string && data.whitePlayer.size() >= 1 && data.whitePlayer.size() <= 100 &&
+             data.blackPlayer is string && data.blackPlayer.size() >= 1 && data.blackPlayer.size() <= 100 &&
+             data.pgn is string && data.pgn.size() <= 20000 &&
+             data.finalFen is string && data.finalFen.size() >= 5 && data.finalFen.size() <= 200 &&
+             data.whiteAccuracy is int && data.whiteAccuracy >= 0 && data.whiteAccuracy <= 100 &&
+             data.blackAccuracy is int && data.blackAccuracy >= 0 && data.blackAccuracy <= 100 &&
+             data.whiteAvgCpl is int && data.whiteAvgCpl >= 0 && data.whiteAvgCpl <= 2000 &&
+             data.blackAvgCpl is int && data.blackAvgCpl >= 0 && data.blackAvgCpl <= 2000 &&
+             data.mistakeCount is int && data.mistakeCount >= 0 && data.mistakeCount <= 500 &&
+             data.blunderCount is int && data.blunderCount >= 0 && data.blunderCount <= 500 &&
+             data.analyzed is bool &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidUserSettings(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.engineName is string && data.engineName.size() >= 1 && data.engineName.size() <= 100 &&
+             data.threads is int && data.threads >= 1 && data.threads <= 16 &&
+             data.hashMb is int && data.hashMb >= 16 && data.hashMb <= 4096 &&
+             data.multiPv is int && data.multiPv >= 1 && data.multiPv <= 10 &&
+             data.yourUsernames is string && data.yourUsernames.size() <= 500 &&
+             data.boardTheme is string && data.boardTheme.size() >= 1 && data.boardTheme.size() <= 60 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidFriendChallenge(data) {
+      return data.inviteCode is string && data.inviteCode.size() >= 4 && data.inviteCode.size() <= 16 &&
+             data.hostUid is string && data.hostUid.size() >= 1 && data.hostUid.size() <= 128 &&
+             data.hostName is string && data.hostName.size() >= 1 && data.hostName.size() <= 100 &&
+             data.guestUid is string && data.guestUid.size() <= 128 &&
+             data.guestName is string && data.guestName.size() <= 100 &&
+             data.currentFen is string && data.currentFen.size() >= 5 && data.currentFen.size() <= 200 &&
+             data.movesUci is string && data.movesUci.size() <= 10000 &&
+             data.lastMoveStrength is string && data.lastMoveStrength.size() <= 40 &&
+             data.status is string && (data.status == 'open' || data.status == 'active' || data.status == 'completed') &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidLeaderboardEntry(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.username is string && data.username.size() >= 1 && data.username.size() <= 60 &&
+             data.titleBadge is string && data.titleBadge.size() >= 1 && data.titleBadge.size() <= 16 &&
+             data.rating is int && data.rating >= 100 && data.rating <= 4000 &&
+             (data.accuracyScore is int || data.accuracyScore is float) &&
+             data.accuracyScore >= 0 && data.accuracyScore <= 100 &&
+             data.gamesWon is int && data.gamesWon >= 0 && data.gamesWon <= 100000 &&
+             data.gamesPlayed is int && data.gamesPlayed >= 0 && data.gamesPlayed <= 200000 &&
+             data.winStreak is int && data.winStreak >= -1000 && data.winStreak <= 1000 &&
+             data.playingStyle is string && data.playingStyle.size() >= 1 && data.playingStyle.size() <= 40 &&
+             data.visibility is string && (data.visibility == 'public' || data.visibility == 'private') &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 1. User-scoped Analyzed Games Archive
+    match /users/{userId}/games/{gameId} {
+      allow get: if isSignedIn() && isValidId(userId) && isValidId(gameId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(gameId) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'title', 'whitePlayer', 'blackPlayer', 'pgn', 'finalFen',
+                         'whiteAccuracy', 'blackAccuracy', 'whiteAvgCpl', 'blackAvgCpl',
+                         'mistakeCount', 'blunderCount', 'analyzed', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'title', 'whitePlayer', 'blackPlayer', 'pgn', 'finalFen',
+                         'whiteAccuracy', 'blackAccuracy', 'whiteAvgCpl', 'blackAvgCpl',
+                         'mistakeCount', 'blunderCount', 'analyzed', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidAnalyzedGame(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(gameId) &&
+                       request.auth.uid == userId &&
+                       isValidAnalyzedGame(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'title', 'pgn', 'finalFen', 'whiteAccuracy', 'blackAccuracy',
+                         'whiteAvgCpl', 'blackAvgCpl', 'mistakeCount', 'blunderCount',
+                         'analyzed', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(userId) && isValidId(gameId) && request.auth.uid == userId;
+    }
+
+    // 2. User-scoped Cloud Settings
+    match /users/{userId}/settings/{settingId} {
+      allow get: if isSignedIn() && isValidId(userId) && isValidId(settingId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && request.auth.uid == userId;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(settingId) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'engineName', 'threads', 'hashMb', 'multiPv',
+                         'yourUsernames', 'boardTheme', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'engineName', 'threads', 'hashMb', 'multiPv',
+                         'yourUsernames', 'boardTheme', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserSettings(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       isValidId(settingId) &&
+                       request.auth.uid == userId &&
+                       isValidUserSettings(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'engineName', 'threads', 'hashMb', 'multiPv',
+                         'yourUsernames', 'boardTheme', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() && isValidId(userId) && isValidId(settingId) && request.auth.uid == userId;
+    }
+
+    // 3. Live Real-Time Friend Challenges
+    match /challenges/{challengeId} {
+      allow get: if isSignedIn() &&
+                    isValidId(challengeId) &&
+                    (existing().status == 'open' ||
+                     existing().hostUid == request.auth.uid ||
+                     existing().guestUid == request.auth.uid);
+
+      allow list: if isSignedIn() &&
+                     (existing().status == 'open' ||
+                      existing().hostUid == request.auth.uid ||
+                      existing().guestUid == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+                       isValidId(challengeId) &&
+                       incoming().hostUid == request.auth.uid &&
+                       incoming().guestUid == '' &&
+                       incoming().status == 'open' &&
+                       incoming().keys().hasAll([
+                         'inviteCode', 'hostUid', 'hostName', 'guestUid', 'guestName',
+                         'currentFen', 'movesUci', 'lastMoveStrength', 'status',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'inviteCode', 'hostUid', 'hostName', 'guestUid', 'guestName',
+                         'currentFen', 'movesUci', 'lastMoveStrength', 'status',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidFriendChallenge(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(challengeId) &&
+                       isValidFriendChallenge(incoming()) &&
+                       existing().status != 'completed' &&
+                       incoming().hostUid == existing().hostUid &&
+                       incoming().inviteCode == existing().inviteCode &&
+                       incoming().createdAt == existing().createdAt &&
+                       (
+                         // Action 1: Guest joins an open challenge
+                         (existing().status == 'open' &&
+                          incoming().guestUid == request.auth.uid &&
+                          incoming().status == 'active' &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'guestUid', 'guestName', 'status', 'updatedAt'
+                          ])) ||
+                         // Action 2: Host or Guest plays a move or finishes the challenge
+                         ((request.auth.uid == existing().hostUid || request.auth.uid == existing().guestUid) &&
+                          incoming().guestUid == existing().guestUid &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'currentFen', 'movesUci', 'lastMoveStrength', 'status', 'updatedAt'
+                          ]))
+                       );
+
+      allow delete: if isSignedIn() &&
+                       isValidId(challengeId) &&
+                       existing().hostUid == request.auth.uid;
+    }
+
+    // 4. Global & Friends Unassisted Ranked Leaderboard (/leaderboard/{userId})
+    match /leaderboard/{userId} {
+      allow get: if isSignedIn() &&
+                    isValidId(userId) &&
+                    (existing().visibility == 'public' || request.auth.uid == userId);
+
+      allow list: if isSignedIn() &&
+                     (existing().visibility == 'public' || existing().userId == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'userId', 'username', 'titleBadge', 'rating', 'accuracyScore',
+                         'gamesWon', 'gamesPlayed', 'winStreak', 'playingStyle',
+                         'visibility', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'username', 'titleBadge', 'rating', 'accuracyScore',
+                         'gamesWon', 'gamesPlayed', 'winStreak', 'playingStyle',
+                         'visibility', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidLeaderboardEntry(incoming());
+
+      allow update: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       isValidLeaderboardEntry(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt &&
+                       incoming().diff(existing()).affectedKeys().hasOnly([
+                         'username', 'titleBadge', 'rating', 'accuracyScore',
+                         'gamesWon', 'gamesPlayed', 'winStreak', 'playingStyle',
+                         'visibility', 'updatedAt'
+                       ]);
+
+      allow delete: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId;
+    }
+  }
+}

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Evaluation bar accent on left -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M28,30h5v24h-5z" />
+    <path
+        android:fillColor="#22C55E"
+        android:pathData="M28,54h5v24h-5z" />
+    <!-- Bold geometric Chess Knight & Crown silhouette -->
+    <path
+        android:fillColor="#22C55E"
+        android:pathData="M67,27c-5,0 -9.5,2.5 -12.5,6.5L49,29l-4,8l5,4c-3.5,4.5 -5,10 -5,16h28c0,-8 -2,-15.5 -6,-21c2.5,-1 5,-1 7.5,0.5L78,31c-3,-2.5 -7,-4 -11,-4zM41,61h34v6H41zM37,71h42v7H37z" />
+</vector>

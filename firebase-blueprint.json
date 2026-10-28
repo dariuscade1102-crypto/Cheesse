@@ -1,0 +1,303 @@
+{
+  "entities": {
+    "AnalyzedGame": {
+      "title": "AnalyzedGame",
+      "description": "Stores a chess game with deep engine report metrics, PGN, FEN, and mistake count for cloud sync and archive retry.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of the game owner"
+        },
+        "title": {
+          "type": "string",
+          "description": "Display title or opening name of the game"
+        },
+        "whitePlayer": {
+          "type": "string",
+          "description": "White player username"
+        },
+        "blackPlayer": {
+          "type": "string",
+          "description": "Black player username"
+        },
+        "pgn": {
+          "type": "string",
+          "description": "Standard PGN or space-separated SAN/UCI move list"
+        },
+        "finalFen": {
+          "type": "string",
+          "description": "Final or key position FEN"
+        },
+        "whiteAccuracy": {
+          "type": "integer",
+          "description": "White accuracy percentage (0-100)"
+        },
+        "blackAccuracy": {
+          "type": "integer",
+          "description": "Black accuracy percentage (0-100)"
+        },
+        "whiteAvgCpl": {
+          "type": "integer",
+          "description": "White average centipawn loss"
+        },
+        "blackAvgCpl": {
+          "type": "integer",
+          "description": "Black average centipawn loss"
+        },
+        "mistakeCount": {
+          "type": "integer",
+          "description": "Total mistakes + inaccuracies in the game"
+        },
+        "blunderCount": {
+          "type": "integer",
+          "description": "Total blunders in the game"
+        },
+        "analyzed": {
+          "type": "boolean",
+          "description": "Whether deep background engine analysis is complete"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()"
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "whitePlayer",
+        "blackPlayer",
+        "pgn",
+        "finalFen",
+        "whiteAccuracy",
+        "blackAccuracy",
+        "whiteAvgCpl",
+        "blackAvgCpl",
+        "mistakeCount",
+        "blunderCount",
+        "analyzed",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "UserSettings": {
+      "title": "UserSettings",
+      "description": "Cross-platform cloud-synced engine, board, and player username settings.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner UID"
+        },
+        "engineName": {
+          "type": "string",
+          "description": "Selected UCI engine profile"
+        },
+        "threads": {
+          "type": "integer",
+          "description": "CPU threads allocated to engine"
+        },
+        "hashMb": {
+          "type": "integer",
+          "description": "Hash memory in MB"
+        },
+        "multiPv": {
+          "type": "integer",
+          "description": "Number of Multi-PV lines"
+        },
+        "yourUsernames": {
+          "type": "string",
+          "description": "Comma-separated player usernames for auto-flipping board"
+        },
+        "boardTheme": {
+          "type": "string",
+          "description": "Selected board color theme"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()"
+        }
+      },
+      "required": [
+        "userId",
+        "engineName",
+        "threads",
+        "hashMb",
+        "multiPv",
+        "yourUsernames",
+        "boardTheme",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FriendChallenge": {
+      "title": "FriendChallenge",
+      "description": "Live real-time friend challenge match room with shareable invite code.",
+      "type": "object",
+      "properties": {
+        "inviteCode": {
+          "type": "string",
+          "description": "6-character shareable challenge code"
+        },
+        "hostUid": {
+          "type": "string",
+          "description": "UID of the host player"
+        },
+        "hostName": {
+          "type": "string",
+          "description": "Display name of the host player"
+        },
+        "guestUid": {
+          "type": "string",
+          "description": "UID of the guest player (empty string when waiting)"
+        },
+        "guestName": {
+          "type": "string",
+          "description": "Display name of the guest player"
+        },
+        "currentFen": {
+          "type": "string",
+          "description": "Current board FEN string"
+        },
+        "movesUci": {
+          "type": "string",
+          "description": "Space-separated UCI move history"
+        },
+        "lastMoveStrength": {
+          "type": "string",
+          "description": "Classification of the last move played"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open", "active", "completed"],
+          "description": "Match lifecycle status"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()"
+        }
+      },
+      "required": [
+        "inviteCode",
+        "hostUid",
+        "hostName",
+        "guestUid",
+        "guestName",
+        "currentFen",
+        "movesUci",
+        "lastMoveStrength",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "LeaderboardEntry": {
+      "title": "LeaderboardEntry",
+      "description": "Cloud-synced player leaderboard profile storing unassisted ranked accuracy, rating, games won, and streak.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Authenticated user UID matching document ID"
+        },
+        "username": {
+          "type": "string",
+          "description": "Public display handle on the leaderboard"
+        },
+        "titleBadge": {
+          "type": "string",
+          "description": "Chess title or rating tier badge (GM, IM, FM, CM, NM)"
+        },
+        "rating": {
+          "type": "integer",
+          "description": "Unassisted tactical chess rating (100-4000)"
+        },
+        "accuracyScore": {
+          "type": "number",
+          "description": "Average unassisted accuracy score (0-100)"
+        },
+        "gamesWon": {
+          "type": "integer",
+          "description": "Total unassisted games won"
+        },
+        "gamesPlayed": {
+          "type": "integer",
+          "description": "Total unassisted games completed"
+        },
+        "winStreak": {
+          "type": "integer",
+          "description": "Current win/loss streak counter"
+        },
+        "playingStyle": {
+          "type": "string",
+          "description": "Preferred playing style profile"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public", "private"],
+          "description": "Visibility scope for global leaderboard query alignment"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp via FieldValue.serverTimestamp()"
+        }
+      },
+      "required": [
+        "userId",
+        "username",
+        "titleBadge",
+        "rating",
+        "accuracyScore",
+        "gamesWon",
+        "gamesPlayed",
+        "winStreak",
+        "playingStyle",
+        "visibility",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/games/{gameId}": {
+      "schema": { "$ref": "#/entities/AnalyzedGame" },
+      "description": "Per-user cloud archive of analyzed games and deep game reports."
+    },
+    "/users/{userId}/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/UserSettings" },
+      "description": "Per-user cloud-synced engine and board settings."
+    },
+    "/challenges/{challengeId}": {
+      "schema": { "$ref": "#/entities/FriendChallenge" },
+      "description": "Live friend challenge match rooms synced in real time."
+    },
+    "/leaderboard/{userId}": {
+      "schema": { "$ref": "#/entities/LeaderboardEntry" },
+      "description": "Global and friends leaderboard rankings keyed by authenticated user UID."
+    }
+  }
+}

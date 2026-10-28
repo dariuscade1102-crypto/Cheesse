@@ -1,0 +1,6 @@
+{
+  "name": "Cheesse",
+  "description": "Minimalist chess analysis, deep game review, mistake trainer, E-Board Bluetooth bridge, and live cloud friend challenges with an embedded background UCI engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
